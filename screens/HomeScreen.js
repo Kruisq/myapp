@@ -1,38 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as Notifications from 'expo-notifications';
-import { useNavigation } from '@react-navigation/native';
-
-// Разрешаем отправку уведомлений
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
-});
 
 const HomeScreen = () => {
   const [startTime, setStartTime] = useState(null);
   const [elapsedTime, setElapsedTime] = useState('');
-  const navigation = useNavigation();
-
-  // Функция для запроса разрешения на уведомления
-  const requestNotificationPermission = async () => {
-    const { status } = await Notifications.getPermissionsAsync();
-    if (status !== 'granted') {
-      await Notifications.requestPermissionsAsync();
-    }
-  };
 
   // Функция для запуска таймера
   const startSobrietyTimer = async () => {
-    const now = Date.now();
-    await AsyncStorage.setItem('sobrietyStartTime', now.toString());
+    const now = Date.now(); // Текущее время в миллисекундах
+    await AsyncStorage.setItem('sobrietyStartTime', now.toString()); // Сохраняем в AsyncStorage
     setStartTime(now);
-    await requestNotificationPermission();
-    scheduleDailyNotification();
+    updateElapsedTime(); // Обновляем таймер сразу после старта
   };
 
   // Функция расчёта прошедшего времени
@@ -40,8 +19,12 @@ const HomeScreen = () => {
     if (!startTime) return;
     const now = Date.now();
     const difference = now - startTime;
+
     const days = Math.floor(difference / (1000 * 60 * 60 * 24));
-    setElapsedTime(`${days} дней`);
+    const hours = Math.floor((difference / (1000 * 60 * 60)) % 24);
+    const minutes = Math.floor((difference / (1000 * 60)) % 60);
+
+    setElapsedTime(`${days} дней, ${hours} часов, ${minutes} минут`);
   };
 
   // Загружаем сохранённое время при запуске
@@ -61,17 +44,6 @@ const HomeScreen = () => {
     return () => clearInterval(interval);
   }, [startTime]);
 
-  // Функция для отправки ежедневного напоминания
-  const scheduleDailyNotification = async () => {
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "🔥 Ты держишься!",
-        body: "Еще один день без вредной привычки! Продолжай в том же духе! 💪",
-      },
-      trigger: { hour: 10, minute: 0, repeats: true }, // Уведомление каждый день в 10:00
-    });
-  };
-
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Главное меню</Text>
@@ -86,20 +58,68 @@ const HomeScreen = () => {
         </TouchableOpacity>
       )}
 
-      {/* Кнопки для перехода на экраны */}
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Stats')}>
+      {/* Кнопки для других разделов */}
+      <TouchableOpacity style={styles.button} onPress={() => alert("📊 Раздел статистики!")}>
         <Text style={styles.buttonText}>📊 Статистика</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Motivation')}>
+      <TouchableOpacity style={styles.button} onPress={() => alert("💪 Раздел мотивации!")}>
         <Text style={styles.buttonText}>💪 Мотивация</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.button} onPress={() => navigation.navigate('Community')}>
+      <TouchableOpacity style={styles.button} onPress={() => alert("💬 Сообщество скоро здесь!")}>
         <Text style={styles.buttonText}>💬 Сообщество</Text>
       </TouchableOpacity>
     </View>
   );
 };
 
-const styles = StyleSheet.creat
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#F7F3E9',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  title: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    marginBottom: 20,
+    color: '#333',
+  },
+  timerText: {
+    fontSize: 18,
+    marginVertical: 20,
+    color: '#555',
+    textAlign: 'center',
+  },
+  startButton: {
+    backgroundColor: '#4CAF50',
+    padding: 15,
+    width: '80%',
+    borderRadius: 15,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  startButtonText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+  button: {
+    backgroundColor: '#FF7854',
+    padding: 15,
+    width: '80%',
+    marginVertical: 8,
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 18,
+    color: '#fff',
+    fontWeight: 'bold',
+  },
+});
+
+export default HomeScreen;
